@@ -20,7 +20,7 @@ function showTradevilleSidebar() {
 function updatePortfolio(data) {
   var sheet = SpreadsheetApp.getActive().getSheetByName("TradeVillePortfolio");
   if (!sheet) {
-    SpreadsheetApp.getUi().alert("Please create new sheet with name: TradeVillePortfolio.");
+    SpreadsheetApp.getUi().alert("Please create a new sheet with the name: TradeVillePortfolio.");
     return;
   }
 
@@ -60,7 +60,7 @@ function updatePortfolio(data) {
 function updateActivity(data) {
   var sheet = SpreadsheetApp.getActive().getSheetByName("TradeVilleActivity");
   if (!sheet) {
-    SpreadsheetApp.getUi().alert("Please create new sheet with name: TradeVilleActivity.");
+    SpreadsheetApp.getUi().alert("Please create a new sheet with the name: TradeVilleActivity.");
     return;
   }
 
