@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <style type="text/css">
+      @import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
+
+      body {
+        margin: 0px;
+        padding: 10px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Helpers */
+      * {
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* Connection status section. */
+      .connection-status {
+        font-size: 14px;
+      }
+      .connection-status .status {
+        display: none;
+      }
+      .connection-status.connecting .status.connecting,
+      .connection-status.connected .status.connected,
+      .connection-status.disconnected .status.disconnected {
+        display: inline;
+      }
+      .connection-status.connecting {
+        color: #2b6cb0;
+        fill: #2b6cb0;
+      }
+      .connection-status.connected {
+        color: #03543f;
+        fill: #03543f;
+      }
+      .connection-status.disconnected {
+        color: #c53030;
+        fill: #c53030;
+      }
+
+      /* User status section */
+      .user-status {
+        font-size: 14px;
+      }
+      .user-status .status {
+        display: none;
+      }
+      .user-status.login-error .status.login-error,
+      .user-status.logged-out .status.logged-out,
+      .user-status.logged-in .status.logged-in {
+        display: inline;
+      }
+      .user-status.logged-in {
+        color: #03543f;
+        fill: #03543f;
+      }
+      .user-status.login-error,
+      .user-status.logged-out {
+        color: #c53030;
+        fill: #c53030;
+      }
+
+      /* .no-connection section */
+      .no-connection {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      /* Login section */
+      .login {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px;
+      }
+      .login .login-error {
+        display: none;
+        padding: 10px;
+        background-color: #fef2f2;
+        color: #b91c1c;
+        font-size: 14px;
+      }
+      .user-status.login-error ~ .login .login-error {
+        display: inline;
+      }
+      .login input[type="text"],
+      .login input[type="password"] {
+        width: 100%;
+      }
+
+      /* Main section */
+      .main {
+        flex-grow: 1;
+        padding-top: 20px;
+      }
+
+      .main .action {
+        margin: 10px 0;
+        padding: 24px;
+        border: 1px solid rgb(0, 0, 0, 0.1);
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        border-radius: 10px;
+      }
+      .main .action h3 {
+        margin: 0;
+        color: #111827;
+        font-size: 16px;
+      }
+      .main .action p {
+        margin-top: 5px;
+        margin-bottom: 20px;
+        color: #6b7280;
+        font-size: 14px;
+      }
+
+      /* Logs section */
+      .logs {
+        border-top: 1px dashed gray;
+        padding-top: 5px;
+        font-size: 14px;
+      }
+      .logs pre {
+        overflow-y: scroll;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="connection-status disconnected">
+      Connection status:
+      <span class="status connecting">Connecting...</span>
+      <span class="status connected">Connected</span>
+      <span class="status disconnected">Disconnected</span>
+    </section>
+
+    <section class="user-status logged-out">
+      User status:
+      <span class="status logged-out">Logged out</span>
+      <span class="status logged-in">Logged in</span>
+      <span class="status login-error">Login error</span>
+    </section>
+
+    <section class="no-connection">
+      <button onclick="tradeville.connect();">Connect</button>
+    </section>
+
+    <section class="login hidden">
+      <div class="login-error">Invalid user/password.</div>
+      <label for="username">
+        Username<br />
+        <input id="username" type="text" value="" />
+      </label>
+      <label for="password">
+        Password<br />
+        <input id="password" type="password" value="" />
+      </label>
+      <div>
+        <label for="account_type">
+          <input id="account_type" type="checkbox" />
+          Demo account
+        </label>
+      </div>
+      <br />
+      <button onclick="tradeville.login()">Login</button>
+    </section>
+
+    <section class="main hidden">
+      <div class="action">
+        <h3>Portfolio</h3>
+        <p>It returns what you have in your portfolio</p>
+        <button onclick="tradeville.getPortfolio();">Get Portfolio</button>
+      </div>
+
+      <div class="action">
+        <h3>Activity</h3>
+        <p>Receive account activity</p>
+        <button onclick="tradeville.getActivity();">Get Activity</button>
+      </div>
+
+      <div class="action">
+        <h3>Disconnect</h3>
+        <p>Disconnect from the API (WebSocket).</p>
+        <button onclick="tradeville.disconnect();">Disconnect</button>
+      </div>
+    </section>
+
+    <details open class="logs">
+      <summary>Console</summary>
+      <pre style="height: 200px"></pre>
+    </details>
+  </body>
+  <script language="javascript" type="text/javascript">
+    /**
+     * User interface
+     */
+    class PageUI {
+      ALLOWED_CONNECTION_STATUES = ["connecting", "connected", "disconnected"];
+      ALLOWED_USER_STATUES = ["logged-in", "logged-out", "login-error"];
+
+      connectionStatus = null;
+      userStatus = null;
+      loginSection = null;
+      mainSection = null;
+      logContainer = null;
+      noConnectionSection = null;
+
+      constructor() {
+        this.connectionStatus = document.querySelector("section.connection-status");
+        this.userStatus = document.querySelector("section.user-status");
+        this.loginSection = document.querySelector("section.login");
+        this.noConnectionSection = document.querySelector("section.no-connection");
+        this.mainSection = document.querySelector("section.main");
+        this.logContainer = document.querySelector("details.logs pre");
+      }
+
+      /**
+       * Update connection status.
+       */
+      setConnectionStatus(status) {
+        if (!this.ALLOWED_CONNECTION_STATUES.includes(status)) {
+          throw new Error("Invalid connection status");
+        }
+
+        if (status === "connected") {
+          this.loginSection.classList.remove("hidden");
+          this.noConnectionSection.classList.add("hidden");
+          this.logMessage("Connection open.");
+        } else if (status === "disconnected") {
+          this.setUserStatus("logged-out");
+          this.loginSection.classList.add("hidden");
+          this.mainSection.classList.add("hidden");
+          this.noConnectionSection.classList.remove("hidden");
+          this.logMessage("Connection closed.");
+        }
+
+        this.connectionStatus.classList.remove(...this.ALLOWED_CONNECTION_STATUES);
+        this.connectionStatus.classList.add(status);
+      }
+
+      /**
+       * Update user status.
+       */
+      setUserStatus(status) {
+        if (!this.ALLOWED_USER_STATUES.includes(status)) {
+          throw new Error("Invalid user status");
+        }
+
+        if (status === "logged-in") {
+          this.loginSection.classList.add("hidden");
+          this.mainSection.classList.remove("hidden");
+        }
+
+        this.userStatus.classList.remove(...this.ALLOWED_USER_STATUES);
+        this.userStatus.classList.add(status);
+      }
+
+      /**
+       * Get user credentials.
+       */
+      getUserCredentials() {
+        return {
+          username: document.querySelector("#username").value,
+          password: document.querySelector("#password").value,
+          isDemo: document.querySelector("#account_type").checked,
+        };
+      }
+
+      /**
+       * Log message.
+       */
+      logMessage(message) {
+        console.log(message);
+        this.logContainer.innerHTML += message + "<br>";
+      }
+    }
+
+    /**
+     * @see https://portal.tradeville.ro/diverse/api/APIdocs.htm
+     */
+    class TradevilleAPI {
+      websocket = null;
+
+      constructor(ui) {
+        this.ui = ui;
+        this.connect();
+      }
+
+      /**
+       * Connect to the Tradeville API.
+       */
+      connect() {
+        this.websocket = new WebSocket("wss://api.tradeville.ro", ["apitv"]);
+        this.websocket.onopen = () => {
+          this.ui.setConnectionStatus("connected");
+        };
+        this.websocket.onerror = () => {
+          this.ui.logMessage("Cannot connect to the server.");
+        };
+        this.websocket.onclose = () => {
+          this.ui.setConnectionStatus("disconnected");
+        };
+        this.websocket.onmessage = (event) => this.parseMessage(event);
+      }
+
+      /**
+       * Disconnect from the Tradeville API.
+       */
+      disconnect() {
+        if (this.websocket && (this.websocket.readyState === 0 || this.websocket.readyState === 1)) {
+          this.websocket.close();
+        }
+      }
+
+      /**
+       * Send command to the server.
+       */
+      command(command) {
+        if (this.websocket.readyState != 1) {
+          this.ui.logMessage("No connection to the server.");
+          return;
+        }
+        this.websocket.send(JSON.stringify(command));
+      }
+
+      /**
+       * Decode message and pass if to the handler as object.
+       */
+      parseMessage(event) {
+        let message;
+
+        try {
+          message = JSON.parse(event.data);
+        } catch (e) {
+          this.ui.logMessage("Invalid JSON message.");
+          return;
+        }
+
+        // Clear credentials from output.
+        if (message.cmd === "login") {
+          message.prm.coduser = "***";
+          message.prm.parola = "***";
+        }
+
+        // Format JSON, log it to the console.
+        this.ui.logMessage(JSON.stringify(message, null, 2));
+
+        this.handleMessage(message);
+      }
+
+      /**
+       * Handle the messages received form the server.
+       */
+      handleMessage(message) {
+        switch (message.cmd) {
+          case "login":
+            if (message.OK === 1) {
+              this.ui.setUserStatus("logged-in");
+              this.ui.logMessage("Logged in.");
+            } else {
+              this.ui.setUserStatus("login-error");
+              this.ui.logMessage("Invalid credentials");
+            }
+            break;
+
+          case "Activity":
+            google.script.run.updateActivity(message.data);
+            break;
+
+          case "Portfolio":
+            console.log(message.data);
+            google.script.run.updatePortfolio(message.data);
+            break;
+        }
+      }
+
+      /**
+       * Login.
+       */
+      login() {
+        const credentials = this.ui.getUserCredentials();
+        console.log(credentials);
+        this.command({
+          cmd: "login",
+          prm: {
+            coduser: credentials.username,
+            parola: credentials.password,
+            demo: credentials.isDemo,
+          },
+        });
+      }
+
+      /**
+       * Get activity,
+       */
+      getActivity() {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 100);
+        this.command({
+          cmd: "Activity",
+          prm: {
+            symbol: null,
+            dstart: oneYearAgo.toISOString(),
+            dend: new Date().toISOString(),
+          },
+        });
+      }
+
+      /**
+       * Get portfolio.
+       */
+      getPortfolio() {
+        this.command({
+          cmd: "Portfolio",
+          prm: {
+            data: null,
+          },
+        });
+      }
+    }
+
+    const tradeville = new TradevilleAPI(new PageUI());
+  </script>
+</html>
