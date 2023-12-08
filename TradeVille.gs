@@ -60,7 +60,7 @@ function updatePortfolio(data) {
 function updateActivity(data) {
   var sheet = SpreadsheetApp.getActive().getSheetByName("TradeVilleActivity");
   if (!sheet) {
-    SpreadsheetApp.getUi().alert("Please create a new sheet with the name: TradeVilleActivity.");
+    SpreadsheetApp.getUi().alert("Please create new sheet with name: TradeVilleActivity.");
     return;
   }
 
@@ -85,6 +85,8 @@ function updateActivity(data) {
       "Obs",
       "AvgPrice",
       "OrderId",
+      "Tax",
+      "Market"
     ],
   ];
 
@@ -107,14 +109,16 @@ function updateActivity(data) {
       data["Obs"][index] || "",
       data["AvgPrice"][index] || "",
       data["OrderId"][index] || "",
+      data["Tax"][index] || "",
+      data["Market"][index] || "",
     ]);
   } while (++index < rowsCount);
 
   // Clear the columns that will be used.
-  sheet.getRange("A:O").clearContent();
+  sheet.getRange("A:Q").clearContent();
 
   // Store rows to sheet.
-  sheet.getRange(`A1:O${rowsCount + 1}`).setValues(rows);
+  sheet.getRange(`A1:Q${rowsCount + 1}`).setValues(rows);
 
   // Notify user about the updated.
   SpreadsheetApp.getUi().alert("TradeVille activity has been updated.");
