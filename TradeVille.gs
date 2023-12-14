@@ -93,26 +93,31 @@ function updateActivity(data) {
   // Convert columns to rows.
   var index = 0;
   do {
+    const opType = data.OpType?.[index] || "";
+    const outAction = opType === "Sell" || opType === "Out";
+    const quantity = data.Quantity?.[index] || 0;
+
     rows.push([
-      new Date(data["Date"][index]) || "",
-      data["OpType"][index] || "",
-      data["Symbol"][index] || "",
-      data["Quantity"][index] || "",
-      data["Price"][index] || "",
-      data["Comission"][index] || "",
-      data["Ammount"][index] || "",
-      data["CashPos"][index] || "",
-      data["InstrPos"][index] || "",
-      data["Profit"][index] || "",
-      data["TranzNo"][index] || "",
-      data["Ccy"][index] || "",
-      data["Obs"][index] || "",
-      data["AvgPrice"][index] || "",
-      data["OrderId"][index] || "",
-      data["Tax"][index] || "",
-      data["Market"][index] || "",
+      new Date(data.Date?.[index]) || "",
+      opType,
+      data?.Symbol?.[index] || "",
+      outAction ? -Math.abs(quantity) : Math.abs(quantity),
+      data?.Price?.[index] || "",
+      data?.Comission?.[index] || "",
+      data?.Ammount?.[index] || "",
+      data?.CashPos?.[index] || "",
+      data?.InstrPos?.[index] || "",
+      data?.Profit?.[index] || "",
+      data?.TranzNo?.[index] || "",
+      data?.Ccy?.[index] || "",
+      data?.Obs?.[index] || "",
+      data?.AvgPrice?.[index] || "",
+      data?.OrderId?.[index] || "",
+      data?.Tax?.[index] || "",
+      data?.Market?.[index] || "",
     ]);
   } while (++index < rowsCount);
+
 
   // Clear the columns that will be used.
   sheet.getRange("A:Q").clearContent();
